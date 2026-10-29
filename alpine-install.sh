@@ -4,8 +4,7 @@
 # Automatic configuration uses Amazon as the REALITY target.
 # The regional/manual branch and Hysteria 2 branch are retained.
 
-XRAY_HOME="/usr/local/bin/xray"
-XRAY_BIN="${XRAY_HOME}/xray"
+XRAY_BIN="/usr/local/bin/xray"
 XRAY_CLI_LINK="/usr/local/sbin/xray"
 XRAY_CONFIG_DIR="/usr/local/etc/xray"
 XRAY_CONFIG="${XRAY_CONFIG_DIR}/config.json"
@@ -406,7 +405,6 @@ installXray(){
     rc-service xray stop >/dev/null 2>&1 || true
 
     mkdir -p \
-        "${XRAY_HOME}" \
         "${XRAY_CONFIG_DIR}" \
         "${XRAY_ASSET_DIR}" \
         "${XRAY_LOG_DIR}" \
@@ -432,7 +430,7 @@ respawn_delay=5
 respawn_max=3
 respawn_period=60
 
-command="/usr/local/bin/xray/xray"
+command="/usr/local/bin/xray"
 command_args="run -c /usr/local/etc/xray/config.json"
 pidfile="/run/${RC_SVCNAME}.pid"
 output_log="/var/log/xray/openrc.log"
