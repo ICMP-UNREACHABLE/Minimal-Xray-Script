@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-# Alpine Linux Xray/REALITY installer.
+# Debian 13 (x86_64) Xray/REALITY + Hysteria 2 installer.
+# Target OS: Debian 13 (trixie), x86_64.
+# Uses systemd instead of Alpine OpenRC and apt instead of apk.
 # Automatic configuration uses Amazon as the REALITY target.
 # The regional/manual branch and Hysteria 2 branch are retained.
 
@@ -188,9 +190,9 @@ EOF
     install -m 0600 "${tempConfig}" "${XRAY_CONFIG}"
     rm -rf "${tempDir}"
 
-    rc-service xray restart || die "Xray failed to restart."
+    systemctl restart xray || die "Xray failed to restart."
     sleep 1
-    rc-service xray status >/dev/null 2>&1 || die "Xray is not running; check ${XRAY_LOG_DIR}/openrc.err."
+    systemctl is-active --quiet xray || die "Xray is not running; check ${XRAY_LOG_DIR}/xray.err or run: journalctl -u xray -n 100 --no-pager."
 }
 
 configReality(){
@@ -283,7 +285,7 @@ EOF
     [[ -f "${XRAY_CONFIG}" ]] && cp -p "${XRAY_CONFIG}" "${XRAY_CONFIG}.bak.$(date '+%Y%m%d%H%M%S')"
     install -m 0600 "${tempConfig}" "${XRAY_CONFIG}"
     rm -rf "${tempDir}"
-    rc-service xray restart
+    systemctl restart xray
 }
 
 detectXrayAsset(){
@@ -331,9 +333,10 @@ installXray(){
     local xrayVersion xrayAsset tempDir zipFile digestFile downloadUrl
     local expectedSha actualSha choice
 
-    log "Installing dependencies..."
-    apk update
-    apk add --no-cache bash ca-certificates curl grep openssl unzip
+    log "Installing Debian dependencies..."
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        bash ca-certificates curl grep openssl unzip coreutils sed gawk
     update-ca-certificates >/dev/null 2>&1 || true
 
     xrayVersion=$(getLatestXrayVersion)
@@ -388,50 +391,39 @@ installXray(){
         die "Downloaded Xray binary cannot run on this system."
     }
 
-    rc-service xray stop >/dev/null 2>&1 || true
+    systemctl stop xray >/dev/null 2>&1 || true
     mkdir -p "${XRAY_HOME}" "${XRAY_CONFIG_DIR}" "${XRAY_ASSET_DIR}" "${XRAY_LOG_DIR}" "$(dirname "${XRAY_CLI_LINK}")"
+    touch "${XRAY_LOG_DIR}/xray.log" "${XRAY_LOG_DIR}/xray.err"
+    chmod 0644 "${XRAY_LOG_DIR}/xray.log" "${XRAY_LOG_DIR}/xray.err"
     install -m 0755 "${tempDir}/unpack/xray" "${XRAY_BIN}"
     ln -sfn "${XRAY_BIN}" "${XRAY_CLI_LINK}" || warn "Could not create ${XRAY_CLI_LINK}; use ${XRAY_BIN} directly."
     [[ -f "${tempDir}/unpack/geoip.dat" ]] && install -m 0644 "${tempDir}/unpack/geoip.dat" "${XRAY_ASSET_DIR}/geoip.dat"
     [[ -f "${tempDir}/unpack/geosite.dat" ]] && install -m 0644 "${tempDir}/unpack/geosite.dat" "${XRAY_ASSET_DIR}/geosite.dat"
     rm -rf "${tempDir}"
 
-    cat > /etc/init.d/xray <<'EOF'
-#!/sbin/openrc-run
+    cat > /etc/systemd/system/xray.service <<'EOF'
+[Unit]
+Description=Xray Proxy Service
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
 
-name="Xray"
-description="Xray Proxy Service"
-supervisor=supervise-daemon
-respawn_delay=5
-respawn_max=3
-respawn_period=60
+[Service]
+Type=simple
+ExecStartPre=/usr/local/bin/xray/xray run -test -format json -c /usr/local/etc/xray/config.json
+ExecStart=/usr/local/bin/xray/xray run -c /usr/local/etc/xray/config.json
+Environment=XRAY_LOCATION_ASSET=/usr/local/share/xray
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=1048576
 
-command="/usr/local/bin/xray/xray"
-command_args="run -c /usr/local/etc/xray/config.json"
-pidfile="/run/${RC_SVCNAME}.pid"
-output_log="/var/log/xray/openrc.log"
-error_log="/var/log/xray/openrc.err"
-export XRAY_LOCATION_ASSET="/usr/local/share/xray"
-extra_commands="checkconfig"
-
-depend() {
-    need net
-    after firewall
-}
-
-checkconfig() {
-    "$command" run -test -format json -c /usr/local/etc/xray/config.json
-}
-
-start_pre() {
-    checkpath -d -m 0755 -o root:root /var/log/xray
-    checkpath -f -m 0644 -o root:root "$output_log" "$error_log"
-    checkconfig
-}
+[Install]
+WantedBy=multi-user.target
 EOF
 
-    chmod 0755 /etc/init.d/xray
-    rc-update add xray default >/dev/null 2>&1 || true
+    systemctl daemon-reload
+    systemctl enable xray >/dev/null 2>&1 || true
 
     log "Installed: $(${XRAY_BIN} version | head -n 1)"
     echo "Please select a configuration method:"
@@ -516,8 +508,10 @@ fi
 
 
 # Install required packages
-log "Installing required packages..."
-apk add --no-cache bash curl wget openssl coreutils grep
+log "Installing Debian dependencies..."
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    bash curl wget openssl coreutils grep ca-certificates
 
 # Generate a strong random password (32 characters)
 hyPasswd=$(openssl rand -base64 24)
@@ -636,7 +630,7 @@ fi
 
 # Start the service
 log "Starting Hysteria service..."
-rc-service hysteria restart
+systemctl restart hysteria
 
 # Display connection information
 echo "==============================================="
@@ -652,7 +646,7 @@ echo "Log files: /var/log/hysteria.log and /var/log/hysteria.err"
 menu(){
     echo "0. Exit"
     echo "1. install Xray and Config Reality"
-    echo "2. install hystria2"
+    echo "2. install Hysteria 2"
     read option
     if [[ "$option" -eq 0 ]]; then
         exit 0
