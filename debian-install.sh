@@ -5,8 +5,7 @@
 set -Eeuo pipefail
 umask 077
 
-XRAY_HOME="/usr/local/bin/xray"
-XRAY_BIN="${XRAY_HOME}/xray"
+XRAY_BIN="/usr/local/bin/xray"
 XRAY_CLI_LINK="/usr/local/sbin/xray"
 XRAY_CONFIG_DIR="/usr/local/etc/xray"
 XRAY_CONFIG="${XRAY_CONFIG_DIR}/config.json"
@@ -424,7 +423,6 @@ installXray() {
     fi
 
     mkdir -p \
-        "$XRAY_HOME" \
         "$XRAY_CONFIG_DIR" \
         "$XRAY_ASSET_DIR" \
         "$XRAY_LOG_DIR" \
