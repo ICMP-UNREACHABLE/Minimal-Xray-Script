@@ -116,7 +116,10 @@ validateXrayConfig(){
 
 installRealityConfig(){
     local tempConfig backupConfig=""
-    tempConfig=$(mktemp)
+    local tempDir
+
+    tempDir=$(mktemp -d) || die "Failed to create temporary directory."
+    tempConfig="${tempDir}/config.json"
 
     cat >"${tempConfig}" <<EOF
 {
@@ -183,7 +186,7 @@ EOF
     fi
 
     install -m 0600 "${tempConfig}" "${XRAY_CONFIG}"
-    rm -f "${tempConfig}"
+    rm -rf "${tempDir}"
 
     rc-service xray restart || die "Xray failed to restart."
     sleep 1
@@ -204,7 +207,7 @@ configReality(){
 # Regional/manual selection is retained. Only key parsing and current target
 # field compatibility are updated; the target list itself is unchanged.
 configRealityRegion(){
-    local userInput index tempConfig
+    local userInput index tempConfig tempDir
     destNames=("www.t-mobile.com" "www.arm.com" "www.tsukuba.ac.jp" "www.hongkongdisneyland.com" "www.china-airlines.com" "sigtelinc.com" "www.bouyguestelecom.fr" "www.mercedes-benz.de" "www.incredibleindia.gov.in" "www.amazon.com")
     sniNames=("business.t-mobile.com" "learn.arm.com" "www.tsukuba.ac.jp" "entitlement.hongkongdisneyland.com" "book.china-airlines.com" "www.sigtelinc.com" "www.bouygtel.fr" "pro.mercedes-benz.com" "www.incredibleindia.org" "corporate.amazon.com")
 
@@ -232,7 +235,8 @@ configRealityRegion(){
 
     generateRealityCredentials
     selectRealityPort
-    tempConfig=$(mktemp)
+    tempDir=$(mktemp -d) || die "Failed to create temporary directory."
+    tempConfig="${tempDir}/config.json"
 
     cat >"${tempConfig}" <<EOF
 {
@@ -278,7 +282,7 @@ EOF
 
     [[ -f "${XRAY_CONFIG}" ]] && cp -p "${XRAY_CONFIG}" "${XRAY_CONFIG}.bak.$(date '+%Y%m%d%H%M%S')"
     install -m 0600 "${tempConfig}" "${XRAY_CONFIG}"
-    rm -f "${tempConfig}"
+    rm -rf "${tempDir}"
     rc-service xray restart
 }
 
@@ -377,29 +381,46 @@ installXray(){
     fi
 
     mkdir -p "${tempDir}/unpack"
-    log "Extracting xray archive file."
-    busybox unzip -p "$zipFile" xray geoip.dat geosite.dat > "$tempDir/xray" || {
-        rm -rf "${tempDir}"
-        die "Failed to extract Xray."
-    }
+        log "Extracting Xray archive files."
 
-    [[ -f "${tempDir}/unpack/xray" ]] || {
-        rm -rf "${tempDir}"
-        die "Xray binary was not found in the archive."
-    }
-    chmod 0755 "${tempDir}/unpack/xray"
-    "${tempDir}/unpack/xray" version >/dev/null || {
-        rm -rf "${tempDir}"
+    local file
+    for file in xray geoip.dat geosite.dat; do
+        if ! busybox unzip -p "$zipFile" "$file" > "$tempDir/$file"; then
+            rm -rf "$tempDir"
+            die "Failed to extract $file."
+        fi
+
+        if [[ ! -s "$tempDir/$file" ]]; then
+            rm -rf "$tempDir"
+            die "Extracted file is empty: $file"
+        fi
+    done
+
+    chmod 0755 "$tempDir/xray"
+
+    "$tempDir/xray" version >/dev/null || {
+        rm -rf "$tempDir"
         die "Downloaded Xray binary cannot run on this system."
     }
 
     rc-service xray stop >/dev/null 2>&1 || true
-    mkdir -p "${XRAY_HOME}" "${XRAY_CONFIG_DIR}" "${XRAY_ASSET_DIR}" "${XRAY_LOG_DIR}" "$(dirname "${XRAY_CLI_LINK}")"
-    install -m 0755 "${tempDir}/unpack/xray" "${XRAY_BIN}"
-    ln -sfn "${XRAY_BIN}" "${XRAY_CLI_LINK}" || warn "Could not create ${XRAY_CLI_LINK}; use ${XRAY_BIN} directly."
-    [[ -f "${tempDir}/unpack/geoip.dat" ]] && install -m 0644 "${tempDir}/unpack/geoip.dat" "${XRAY_ASSET_DIR}/geoip.dat"
-    [[ -f "${tempDir}/unpack/geosite.dat" ]] && install -m 0644 "${tempDir}/unpack/geosite.dat" "${XRAY_ASSET_DIR}/geosite.dat"
-    rm -rf "${tempDir}"
+
+    mkdir -p \
+        "${XRAY_HOME}" \
+        "${XRAY_CONFIG_DIR}" \
+        "${XRAY_ASSET_DIR}" \
+        "${XRAY_LOG_DIR}" \
+        "$(dirname "${XRAY_CLI_LINK}")"
+
+    install -m 0755 "$tempDir/xray" "$XRAY_BIN"
+
+    ln -sfn "$XRAY_BIN" "$XRAY_CLI_LINK" ||
+        warn "Could not create ${XRAY_CLI_LINK}; use ${XRAY_BIN} directly."
+
+    install -m 0644 "$tempDir/geoip.dat" "${XRAY_ASSET_DIR}/geoip.dat"
+    install -m 0644 "$tempDir/geosite.dat" "${XRAY_ASSET_DIR}/geosite.dat"
+
+    rm -rf "$tempDir"
 
     cat > /etc/init.d/xray <<'EOF'
 #!/sbin/openrc-run
@@ -590,10 +611,10 @@ masquerade:
     url: https://bing.com
     rewriteHost: true
 quic:
-  initStreamReceiveWindow: 26843545 
-  maxStreamReceiveWindow: 26843545 
-  initConnReceiveWindow: 67108864 
-  maxConnReceiveWindow: 67108864 
+  initStreamReceiveWindow: 1048576
+  maxStreamReceiveWindow: 4194304
+  initConnReceiveWindow: 4194304
+  maxConnReceiveWindow: 8388608
 bandwidth:
   up: 1 gbps
   down: 1 gbps
