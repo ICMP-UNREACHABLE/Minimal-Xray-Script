@@ -6,8 +6,7 @@
 # Automatic configuration uses Amazon as the REALITY target.
 # The regional/manual branch and Hysteria 2 branch are retained.
 
-XRAY_HOME="/usr/local/bin/xray"
-XRAY_BIN="${XRAY_HOME}/xray"
+XRAY_BIN="/usr/local/bin/xray"
 XRAY_CLI_LINK="/usr/local/sbin/xray"
 XRAY_CONFIG_DIR="/usr/local/etc/xray"
 XRAY_CONFIG="${XRAY_CONFIG_DIR}/config.json"
@@ -392,7 +391,7 @@ installXray(){
     }
 
     systemctl stop xray >/dev/null 2>&1 || true
-    mkdir -p "${XRAY_HOME}" "${XRAY_CONFIG_DIR}" "${XRAY_ASSET_DIR}" "${XRAY_LOG_DIR}" "$(dirname "${XRAY_CLI_LINK}")"
+    mkdir -p "${XRAY_CONFIG_DIR}" "${XRAY_ASSET_DIR}" "${XRAY_LOG_DIR}" "$(dirname "${XRAY_CLI_LINK}")"
     touch "${XRAY_LOG_DIR}/xray.log" "${XRAY_LOG_DIR}/xray.err"
     chmod 0644 "${XRAY_LOG_DIR}/xray.log" "${XRAY_LOG_DIR}/xray.err"
     install -m 0755 "${tempDir}/unpack/xray" "${XRAY_BIN}"
@@ -411,8 +410,8 @@ StartLimitBurst=3
 
 [Service]
 Type=simple
-ExecStartPre=/usr/local/bin/xray/xray run -test -format json -c /usr/local/etc/xray/config.json
-ExecStart=/usr/local/bin/xray/xray run -c /usr/local/etc/xray/config.json
+ExecStartPre=/usr/local/bin/xray run -test -format json -c /usr/local/etc/xray/config.json
+ExecStart=/usr/local/bin/xray run -c /usr/local/etc/xray/config.json
 Environment=XRAY_LOCATION_ASSET=/usr/local/share/xray
 Restart=on-failure
 RestartSec=5
