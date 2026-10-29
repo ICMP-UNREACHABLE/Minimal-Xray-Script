@@ -327,9 +327,17 @@ installXray(){
     local xrayVersion xrayAsset tempDir zipFile digestFile downloadUrl
     local expectedSha actualSha choice
 
-    log "Installing dependencies..."
-    apk update
-    apk add --no-cache bash ca-certificates curl grep openssl unzip
+    log "Installing minimal dependencies..."
+    export APK_CACHE_DIR="/var/tmp/apk-cache"
+    mkdir -p "$APK_CACHE_DIR"
+
+    apk add --no-cache \
+        bash \
+        ca-certificates \
+        curl \
+        grep \
+        openssl
+
     update-ca-certificates >/dev/null 2>&1 || true
 
     xrayVersion=$(getLatestXrayVersion)
@@ -369,10 +377,7 @@ installXray(){
     fi
 
     mkdir -p "${tempDir}/unpack"
-    unzip -q -o "${zipFile}" -d "${tempDir}/unpack" || {
-        rm -rf "${tempDir}"
-        die "Failed to extract Xray."
-    }
+    busybox unzip -o "${zipFile}" xray -d "${tempDir}/unpack" >/dev/null
 
     [[ -f "${tempDir}/unpack/xray" ]] || {
         rm -rf "${tempDir}"
