@@ -21,15 +21,13 @@
 ### Alpine Linux
 
 ```sh
-wget https://raw.githubusercontent.com/ICMP-UNREACHABLE/Minimal-Xray-Script/main/alpine-install.sh
-bash alpine-install.sh
+wget -qO- https://raw.githubusercontent.com/ICMP-UNREACHABLE/Minimal-Xray-Script/main/alpine-install.sh | sh
 ```
 
 ### Debian 13 x86_64
 
 ```sh
-wget https://raw.githubusercontent.com/ICMP-UNREACHABLE/Minimal-Xray-Script/main/debian-install.sh
-bash debian-install.sh
+wget -qO- https://raw.githubusercontent.com/ICMP-UNREACHABLE/Minimal-Xray-Script/main/debian-install.sh | bash
 ```
 
 ## 配置 Xray
