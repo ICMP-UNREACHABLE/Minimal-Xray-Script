@@ -49,7 +49,7 @@ SNI:    www.amazon.com
 
 | 文件         | 路径                                 |
 | ---------- | ---------------------------------- |
-| Xray 程序    | `/usr/local/bin/xray/xray`         |
+| Xray 程序    | `/usr/local/bin/xray`         |
 | 命令         | `/usr/local/sbin/xray`             |
 | 配置文件       | `/usr/local/etc/xray/config.json`  |
 | 数据目录       | `/usr/local/share/xray/`           |
@@ -93,7 +93,7 @@ service xray status
 ## 检查 Xray 配置
 
 ```sh
-/usr/local/bin/xray/xray run -test \
+/usr/local/bin/xray run -test \
   -format json \
   -c /usr/local/etc/xray/config.json
 ```
