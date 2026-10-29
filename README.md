@@ -1,8 +1,8 @@
 # Minimal Xray Script
 
-一键安装和配置 **Xray-core** 的 Shell 脚本，支持 **Alpine Linux** 和 **Debian 13 x86_64**。
+一键安装和配置 **Xray-core** 的 Shell 脚本，支持 **Alpine** 和 **Debian/Ubuntu**。
 
-支持快速配置 **VLESS + REALITY**，也提供 **Hysteria 2** 安装选项。
+快速配置 **VLESS + REALITY**，也提供 **Hysteria 2** 安装选项(实验性)。
 
 ## 功能
 
@@ -18,33 +18,16 @@
 
 ## 安装
 
-### Alpine Linux
+### Alpine
 
 ```sh
 bash <(wget -qO- https://raw.githubusercontent.com/ICMP-UNREACHABLE/Minimal-Xray-Script/main/alpine-install.sh)
 ```
 
-### Debian 13 x86_64
+### Debian/Ubuntu
 
 ```sh
 bash <(wget -qO- https://raw.githubusercontent.com/ICMP-UNREACHABLE/Minimal-Xray-Script/main/debian-install.sh)
-```
-
-## 配置 Xray
-
-运行脚本后选择：
-
-```text
-1) Install Xray + Reality
-2) Install Hysteria 2
-```
-
-选择 Xray 后：
-
-```text
-1) Auto Config
-2) Regional Config
-3) Exit
 ```
 
 ### 自动配置
@@ -55,36 +38,11 @@ bash <(wget -qO- https://raw.githubusercontent.com/ICMP-UNREACHABLE/Minimal-Xray
 Target: www.amazon.com:443
 SNI:    www.amazon.com
 ```
-
-脚本会自动生成：
-
-* UUID
-* REALITY Private Key
-* REALITY Public Key
-* Short ID
-* VLESS 客户端 URI
-
+可以根据地区选择 REALITY Target / SNI
 生成的客户端信息保存在：
 
 ```text
 /root/xray-reality.txt
-```
-
-### 区域配置
-
-可以根据地区选择 REALITY Target / SNI：
-
-```text
-1) US
-2) UK
-3) JP
-4) HK
-5) TW
-6) SG
-7) FR
-8) DE
-9) IN
-10) Others
 ```
 
 ## Xray 文件位置
