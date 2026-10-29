@@ -377,7 +377,11 @@ installXray(){
     fi
 
     mkdir -p "${tempDir}/unpack"
-    busybox unzip -o "${zipFile}" xray -d "${tempDir}/unpack" >/dev/null
+    log "Extracting xray archive file."
+    busybox unzip -p "$zipFile" xray geoip.dat geosite.dat > "$tempDir/xray" || {
+        rm -rf "${tempDir}"
+        die "Failed to extract Xray."
+    }
 
     [[ -f "${tempDir}/unpack/xray" ]] || {
         rm -rf "${tempDir}"
