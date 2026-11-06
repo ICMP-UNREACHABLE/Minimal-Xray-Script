@@ -74,7 +74,7 @@ if command -v systemctl >/dev/null 2>&1; then
 fi
 
 log "删除程序、配置及日志..."
-rm -f /usr/local/bin/xray
+rm -rf /usr/local/bin/xray
 # 仅删除指向本安装路径的链接，避免误删用户自己的其他文件。
 if [[ -L /usr/local/sbin/xray ]] &&
    [[ "$(readlink -f /usr/local/sbin/xray 2>/dev/null || true)" == "/usr/local/bin/xray" ]]; then
