@@ -520,7 +520,7 @@ getPort=$(shuf -i 10000-65000 -n 1)
 
 # Get the latest Hysteria 2 version
 log "Detecting latest Hysteria 2 version..."
-HY2_VERSION=$(curl -s https://api.github.com/repos/apernet/hysteria/releases/latest | grep -oP '"tag_name": "\K(.*?)(?=")')
+HY2_VERSION=$(curl -fsSL https://api.github.com/repos/apernet/hysteria/releases/latest | grep -oP '"tag_name": "\K(.*?)(?=")')
 if [[ -z "$HY2_VERSION" ]]; then
     log "Error: Could not detect latest version"
     exit 1
